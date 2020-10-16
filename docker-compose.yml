@@ -1,0 +1,48 @@
+version: '3'
+services:
+  elasticsearch:
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+      container_name: elasticsearch
+      volumes:
+        - ${WEBAPP_STORAGE_HOME}/Elasticsearch/data:/etc/elasticsearch/data
+        - ${WEBAPP_STORAGE_HOME}/Elasticsearch/config/elasticsearch.yml:/etc/elasticsearch/config/elasticsearch.yml
+      ports:
+        - "9200:9200"
+        - "9300:9300"
+      environment:
+        - "discovery.type=single-node"
+        - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+        - "XPACK_SECURITY_ENABLED=false"
+      networks:
+        - elastic
+      healthcheck:
+        test: "curl http://elasticsearch:9200"
+        interval: "1s"
+        timeout: "3s"
+        retries: 60
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.9.1
+    container_name: kibana
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    networks:
+      - elastic
+  web:
+    image: aicodeelasticsearch.azurecr.io/aicode:latest
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on:
+      - elasticsearch
+      - kibana
+    networks:
+      - elastic
+
+networks:
+  elastic:
+    driver: bridge
