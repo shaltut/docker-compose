@@ -1,14 +1,14 @@
-version: '3'
+version: '3.7'
 services:
   elasticsearch:
       image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
       container_name: elasticsearch
       volumes:
-        - ${WEBAPP_STORAGE_HOME}/Elasticsearch/data:/etc/elasticsearch/data
-        - ${WEBAPP_STORAGE_HOME}/Elasticsearch/config/elasticsearch.yml:/etc/elasticsearch/config/elasticsearch.yml
+        - data01:/usr/share/elasticsearch/data
       ports:
         - "9200:9200"
         - "9300:9300"
+      # env_file: variables.env
       environment:
         - "discovery.type=single-node"
         - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
@@ -20,6 +20,8 @@ services:
         interval: "1s"
         timeout: "3s"
         retries: 60
+
+
   kibana:
     image: docker.elastic.co/kibana/kibana:7.9.1
     container_name: kibana
@@ -32,11 +34,15 @@ services:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     networks:
       - elastic
+
+
   web:
     image: aicodeelasticsearch.azurecr.io/aicode:latest
-    restart: always
+    # restart: always
     ports:
       - "5000:5000"
+      - "80:80"
+      - "8000:8000"
     depends_on:
       - elasticsearch
       - kibana
@@ -46,3 +52,10 @@ services:
 networks:
   elastic:
     driver: bridge
+
+volumes:
+  data01:
+    driver: azure_file
+    driver_opts:
+      share_name: aicode-volume
+      storage_account_name: aicodestorage
